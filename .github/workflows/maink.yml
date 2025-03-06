@@ -1,0 +1,89 @@
+name: Build Android APK
+
+on: [push]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45  # زيادة الوقت بسبب حجم tensorflow
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            zlib1g-dev \
+            libncurses5-dev \
+            libgdbm-dev \
+            libnss3-dev \
+            libssl-dev \
+            libffi-dev \
+            libxml2-dev \
+            libxslt1-dev \
+            liblzma-dev \
+            libjpeg-dev \
+            libopenblas-dev
+
+    - name: Install build tools
+      run: |
+        pip install --upgrade pip wheel setuptools virtualenv
+        pip install buildozer cython==0.29.37
+
+    - name: Configure Buildozer
+      run: |
+        buildozer init
+        cat << EOF > buildozer.spec
+        [app]
+        title = Fruit Recognition
+        package.name = fruitapp
+        package.domain = org.kamal
+        source.dir = .
+        source.include_exts = py,png,jpg,kv,ttf,tflite,ico
+        version = 1.0
+        requirements = 
+            python3,
+            kivy==2.3.1,
+            kivymd==1.2.0,
+            arabic-reshaper==3.0.0,
+            python-bidi==0.6.6,
+            opencv-python==4.11.0.86,
+            tensorflow==2.18.0,
+            numpy==1.26.4,
+            asynckivy==0.6.4,
+            kivy-deps.angle==0.4.0,
+            kivy-deps.glew==0.3.1,
+            kivy_deps.sdl2==0.8.0
+        android.permissions = CAMERA,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
+        android.api = 34
+        android.ndk = 25b
+        android.arch = arm64-v8a
+        p4a.branch = 2023.08.04
+        orientation = portrait
+        presplash.filename = fru.ico
+        icon.filename = fru.ico
+        android.accept_sdk_license = True
+        EOF
+
+    - name: Build with Buildozer
+      run: |
+        buildozer -v android clean
+        buildozer -v android debug
+        cp bin/*.apk .
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: fruit-app
+        path: ./*.apk
