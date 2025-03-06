@@ -1,0 +1,10 @@
+kivy==2.1.0
+kivymd==1.1.1
+tensorflow==2.10.0
+opencv-python==4.6.0.66
+numpy==1.23.4
+arabic-reshaper==3.0.0
+python-bidi==0.4.2
+plyer==2.1.0
+cython==0.29.32
+Pillow==9.3.0
