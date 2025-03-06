@@ -1,0 +1,66 @@
+name: Build APK
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            zip \
+            unzip \
+            openjdk-11-jdk \
+            zlib1g-dev \
+            ccache \
+            libncurses5-dev \
+            libgdbm-dev \
+            libnss3-dev \
+            libssl-dev \
+            libreadline-dev \
+            libffi-dev \
+            libsqlite3-dev \
+            liblzma-dev
+            
+    - name: Install Buildozer
+      run: |
+        pip install --upgrade pip
+        pip install buildozer
+        pip install cython==0.29.32
+
+    - name: Configure Buildozer
+      run: |
+        buildozer init
+        echo "[app]" > buildozer.spec
+        echo "title = Fruit Recognition" >> buildozer.spec
+        echo "package.name = fruitapp" >> buildozer.spec
+        echo "package.domain = org.kamal" >> buildozer.spec
+        echo "source.dir = ." >> buildozer.spec
+        echo "source.include_exts = py,png,jpg,kv,ttf,tflite" >> buildozer.spec
+        echo "version = 1.0" >> buildozer.spec
+        echo "requirements = python3,kivy==2.1.0,kivymd==1.1.1,numpy==1.23.4,opencv-python==4.6.0.66,arabic-reshaper==3.0.0,python-bidi==0.4.2,Pillow==9.3.0,tensorflow==2.10.0" >> buildozer.spec
+        echo "android.permissions = CAMERA,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE" >> buildozer.spec
+        echo "android.api = 30" >> buildozer.spec
+        echo "android.ndk = 23b" >> buildozer.spec
+        echo "android.arch = armeabi-v7a" >> buildozer.spec
+        echo "p4a.branch = develop" >> buildozer.spec
+        echo "orientation = portrait" >> buildozer.spec
+        echo "presplash.filename = %(source.dir)s/assets/presplash.png" >> buildozer.spec
+        echo "icon.filename = %(source.dir)s/assets/icon.png" >> buildozer.spec
+
+    - name: Build APK
+      run: |
+        buildozer -v android debug
