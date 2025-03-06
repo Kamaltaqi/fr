@@ -1,0 +1,68 @@
+name: Build APK
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3  # استخدام الإصدار الأحدث
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'  # تأكد من توافقه مع tensorflow 2.10
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \  # الترقية إلى JDK 17
+            zlib1g-dev \
+            ccache \
+            libncurses5-dev \
+            libgdbm-dev \
+            libnss3-dev \
+            libssl-dev \
+            libreadline-dev \
+            libffi-dev \
+            libsqlite3-dev \
+            liblzma-dev \
+            libxml2-dev \
+            libxslt1-dev
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install buildozer cython==0.29.32 virtualenv
+
+    - name: Generate buildozer.spec
+      run: |
+        buildozer init
+        echo "[app]" > buildozer.spec
+        echo "title = FruitApp" >> buildozer.spec
+        echo "package.name = fruitapp" >> buildozer.spec
+        echo "package.domain = org.kamal" >> buildozer.spec
+        echo "source.dir = ." >> buildozer.spec
+        echo "source.include_exts = py,png,jpg,kv,ttf,tflite" >> buildozer.spec
+        echo "version = 1.0" >> buildozer.spec
+        echo "requirements = python3,kivy==2.1.0,kivymd==1.1.1,numpy==1.23.4,opencv-python-headless==4.6.0.66,arabic-reshaper==3.0.0,python-bidi==0.4.2,Pillow==9.3.0,tensorflow==2.10.0" >> buildozer.spec  # استخدام opencv-headless
+        echo "android.permissions = CAMERA,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE" >> buildozer.spec
+        echo "android.api = 33" >> buildozer.spec  # الترقية إلى API 33
+        echo "android.ndk = 25b" >> buildozer.spec  # إصدار NDK أحدث
+        echo "android.arch = arm64-v8a" >> buildozer.spec  # تغيير الهندسة
+        echo "p4a.branch = 2023.08.04" >> buildozer.spec  # استخدام فرع مستقر
+        echo "orientation = portrait" >> buildozer.spec
+        echo "presplash.filename = assets/presplash.png" >> buildozer.spec
+        echo "icon.filename = assets/icon.png" >> buildozer.spec
+
+    - name: Build APK
+      run: |
+        buildozer -v android debug deploy
+        cp bin/*.apk .  # نسخ APK إلى المجلد الرئيسي
